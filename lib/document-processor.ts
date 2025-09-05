@@ -1,5 +1,6 @@
 import { chunkText, generateEmbeddings, countTokens } from './embeddings-simple';
 import { getPineconeIndex, DocumentChunk, DocumentMetadata } from './pinecone';
+import { parseDocument, ParsedDocument } from './document-parser';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface ProcessedDocument {
@@ -61,6 +62,65 @@ export async function processDocument(
   } catch (error) {
     console.error('Error processing document:', error);
     throw new Error('Failed to process document');
+  }
+}
+
+export async function processFile(
+  file: File,
+  buffer: Buffer
+): Promise<ProcessedDocument> {
+  const startTime = Date.now();
+  
+  try {
+    // Parse the document
+    const parsedDoc = await parseDocument(file, buffer);
+    
+    // Generate document ID
+    const documentId = uuidv4();
+    
+    // Count total tokens
+    const totalTokens = countTokens(parsedDoc.text);
+    
+    // Chunk the text
+    const textChunks = chunkText(parsedDoc.text);
+    
+    // Generate embeddings for all chunks
+    const embeddings = await generateEmbeddings(textChunks);
+    
+    // Create document chunks with metadata
+    const chunks: DocumentChunk[] = textChunks.map((chunkText, index) => ({
+      id: `${documentId}_chunk_${index}`,
+      text: chunkText,
+      metadata: {
+        source: 'file-upload',
+        title: parsedDoc.metadata.fileName,
+        fileType: parsedDoc.metadata.fileType,
+        fileSize: parsedDoc.metadata.size,
+        pageCount: parsedDoc.metadata.pageCount,
+        wordCount: parsedDoc.metadata.wordCount,
+        position: index,
+        chunkIndex: index,
+        totalChunks: textChunks.length,
+      },
+      embedding: embeddings[index],
+    }));
+    
+    // Store in Pinecone
+    await storeChunksInPinecone(chunks);
+    
+    const processingTime = Date.now() - startTime;
+    
+    return {
+      id: documentId,
+      title: parsedDoc.metadata.fileName,
+      source: 'file-upload',
+      chunks,
+      totalTokens,
+      processingTime,
+    };
+  } catch (error) {
+    console.error('Error processing file:', error);
+    throw new Error(`Failed to process file: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
