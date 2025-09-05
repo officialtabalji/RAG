@@ -1,5 +1,5 @@
 const { Pinecone } = require('@pinecone-database/pinecone');
-require('dotenv').config();
+require('dotenv').config({path: '.env.local'});
 
 async function initializePinecone() {
   try {
@@ -15,18 +15,18 @@ async function initializePinecone() {
     // Check if index exists
     const existingIndexes = await pinecone.listIndexes();
     const indexExists = existingIndexes.indexes?.some(index => index.name === indexName);
-    
+
     if (indexExists) {
-      console.log(`Index '${indexName}' already exists.`);
+      console.log(`Index '${indexName}' already exists (skipping creation).`);
       return;
     }
+
     
     // Create index
     console.log(`Creating index '${indexName}'...`);
     await pinecone.createIndex({
       name: indexName,
       dimension: 1536, // OpenAI text-embedding-ada-002 dimension
-      metric: 'cosine',
       spec: {
         serverless: {
           cloud: 'aws',
