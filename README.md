@@ -291,15 +291,5 @@ NEXT_PUBLIC_APP_URL=https://your-app.vercel.app
 - [ ] Batch processing for large document collections
 - [ ] Advanced analytics and usage tracking
 
-## 📄 License
 
-MIT License - see LICENSE file for details.
-
-## 👨‍💻 Author
-
-Built as a demonstration of modern RAG architecture and best practices.
-
----
-
-**Live Demo**: [Your deployed URL here]
-**GitHub Repository**: [Your repository URL here]
+**GitHub Repository**: [https://github.com/officialtabalji/RAG]
