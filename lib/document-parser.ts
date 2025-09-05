@@ -1,8 +1,19 @@
-import pdfParse from 'pdf-parse';
-import mammoth from 'mammoth';
-import * as XLSX from 'xlsx';
-import csv from 'csv-parser';
-import { Readable } from 'stream';
+// Server-side only imports - these will only work in Node.js environment
+let pdfParse: any;
+let mammoth: any;
+let XLSX: any;
+let csv: any;
+
+// Dynamic imports for server-side only modules
+async function loadServerModules() {
+  if (typeof window === 'undefined') {
+    // Only load these modules on the server side
+    pdfParse = (await import('pdf-parse')).default;
+    mammoth = (await import('mammoth')).default;
+    XLSX = await import('xlsx');
+    csv = (await import('csv-parser')).default;
+  }
+}
 
 export interface ParsedDocument {
   text: string;
@@ -53,6 +64,9 @@ export async function parseDocument(
   file: File,
   buffer: Buffer
 ): Promise<ParsedDocument> {
+  // Load server modules first
+  await loadServerModules();
+  
   const fileName = file.name;
   const fileType = getFileExtension(fileName);
   const size = file.size;
@@ -152,6 +166,7 @@ async function parseDOCX(buffer: Buffer): Promise<{ text: string; metadata: any 
 async function parseCSV(buffer: Buffer): Promise<{ text: string; metadata: any }> {
   return new Promise((resolve, reject) => {
     const results: any[] = [];
+    const { Readable } = require('stream');
     const stream = Readable.from(buffer.toString());
     
     stream

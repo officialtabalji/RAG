@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { processFile } from '@/lib/document-processor';
-import { isSupportedFormat, validateFileSize } from '@/lib/document-parser';
+import { isSupportedFormat, validateFileSize } from '@/lib/document-utils';
 
 export async function POST(request: NextRequest) {
   try {

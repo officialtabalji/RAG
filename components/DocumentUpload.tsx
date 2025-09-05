@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, X, File, FileImage, FileSpreadsheet } from 'lucide-react';
-import { SUPPORTED_FORMATS, getFileTypeDescription } from '@/lib/document-parser';
+import { SUPPORTED_FORMATS, getFileTypeDescription, readTextFile } from '@/lib/document-utils';
 
 interface DocumentUploadProps {
   onUpload: () => void;
@@ -18,18 +18,21 @@ export default function DocumentUpload({ onUpload }: DocumentUploadProps) {
     message: string;
   }>({ type: null, message: '' });
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (file) {
       // For text files, read as text
       if (file.type.startsWith('text/') || file.name.endsWith('.md')) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const content = e.target?.result as string;
+        try {
+          const content = await readTextFile(file);
           setText(content);
           setTitle(file.name);
-        };
-        reader.readAsText(file);
+        } catch (error) {
+          setUploadStatus({
+            type: 'error',
+            message: 'Failed to read text file',
+          });
+        }
       } else {
         // For other files, upload directly
         handleFileUpload(file);
